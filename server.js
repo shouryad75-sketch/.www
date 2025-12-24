@@ -6,27 +6,25 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const app = express();
-
-// Middleware: Allows the frontend to send data to the backend
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static('public')); // This lets us show the HTML files
+app.use(express.static('public'));
 
-// 1. Connect to MongoDB
+// MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('✅ MongoDB Connected'))
     .catch(err => console.log('❌ MongoDB Error:', err));
 
-// 2. Define how user data looks in the database
+// User Schema
 const UserSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    otp: String,         // Stores the temporary code
-    otpExpires: Date     // Stores when the code expires
+    otp: String,
+    otpExpires: Date
 });
 const User = mongoose.model('User', UserSchema);
 
-// 3. Setup the Email Sender
+// Email Setup
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -34,72 +32,64 @@ const transporter = nodemailer.createTransport({
         pass: process.env.EMAIL_PASS
     }
 });
-// ROUTE 1: REGISTER (Sign Up)
+
+// ROUTE: SIGNUP (Create Account)
 app.post('/signup', async (req, res) => {
-    const { email, password } = req.body;
+    const email = req.body.email.trim().toLowerCase();
+    const password = req.body.password.trim();
     try {
-        // Create new user in database
         const newUser = new User({ email, password });
         await newUser.save();
-        res.json({ success: true, message: 'User registered! Please login.' });
+        res.json({ success: true, message: 'Account created for Aimers Classes!' });
     } catch (error) {
-        res.json({ success: false, message: 'Error: Email might already exist.' });
+        res.json({ success: false, message: 'Account already exists.' });
     }
 });
 
-// ROUTE 2: LOGIN (Generate & Send OTP)
+// ROUTE: LOGIN (Send OTP)
 app.post('/login', async (req, res) => {
-    const { email, password } = req.body;
+    const email = req.body.email.trim().toLowerCase();
+    const password = req.body.password.trim();
     try {
-        // Find user
         const user = await User.findOne({ email, password });
-        if (!user) {
-            return res.json({ success: false, message: 'Invalid email or password.' });
-        }
+        if (!user) return res.json({ success: false, message: 'Incorrect email or password.' });
 
-        // Generate 6-digit Code
         const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        // Save OTP to database (valid for 5 minutes)
         user.otp = otpCode;
         user.otpExpires = Date.now() + 5 * 60 * 1000;
         await user.save();
 
-        // Send Email
         await transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: email,
-            subject: 'Your Login Code',
-            text: `Your OTP is: ${otpCode}`
+            subject: 'Your Aimers Classes Login Code',
+            text: `Welcome! Your verification code is: ${otpCode}`
         });
-
         res.json({ success: true, message: 'OTP sent to your email!' });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
-// ROUTE 3: VERIFY OTP
+// ROUTE: VERIFY OTP
 app.post('/verify', async (req, res) => {
-    const { email, otp } = req.body;
+    const email = req.body.email.trim().toLowerCase();
+    const otp = req.body.otp.trim();
     try {
         const user = await User.findOne({ email });
-        
-        // Check if OTP matches and hasn't expired
         if (user && user.otp === otp && user.otpExpires > Date.now()) {
-            // Clear the OTP so it can't be used twice
             user.otp = null;
             user.otpExpires = null;
             await user.save();
-            res.json({ success: true, message: 'Login Success!' });
+            res.json({ success: true, message: 'Login successful!' });
         } else {
-            res.json({ success: false, message: 'Invalid or expired OTP.' });
+            res.json({ success: false, message: 'Invalid or expired code.' });
         }
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Error verifying.' });
+        res.status(500).json({ success: false, message: 'Verification error' });
     }
 });
 
-// Start the server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));
+

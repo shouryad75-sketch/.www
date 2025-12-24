@@ -1,10 +1,11 @@
 {
   "name": "otp-website",
   "version": "1.0.0",
-  "description": "",
+  "description": "��#\u0000 \u0000.\u0000w\u0000w\u0000w\u0000\r\u0000 \u0000",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
@@ -17,5 +18,13 @@
     "express": "^5.2.1",
     "mongoose": "^9.0.2",
     "nodemailer": "^7.0.12"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shouryad75-sketch/.www.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shouryad75-sketch/.www/issues"
+  },
+  "homepage": "https://github.com/shouryad75-sketch/.www#readme"
 }
