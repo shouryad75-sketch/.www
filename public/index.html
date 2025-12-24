@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aimers Classes | Portal</title>
+    <style>
+        :root {
+            --primary-color: #002147; /* Navy Blue */
+            --accent-color: #FFD700;  /* Gold */
+            --bg-color: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #003366 100%);
+        }
+
+        .box {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 350px;
+            text-align: center;
+            border-top: 5px solid var(--accent-color);
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sub-text {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 20px;
+            color: var(--primary-color);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+
+        button:hover { background: #003366; }
+        .hidden { display: none; }
+        .footer-links { margin-top: 20px; font-size: 14px; }
+        a { color: var(--primary-color); font-weight: bold; text-decoration: none; cursor: pointer; }
+        .otp-msg { font-size: 13px; color: #28a745; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <div class="logo-text">Aimers Classes</div>
+        <div class="sub-text">Aim High, Achieve Higher</div>
+
+        <!-- SIGN UP FORM -->
+        <div id="signup-form">
+            <h2>Create Account</h2>
+            <input type="email" id="signup-email" placeholder="Email Address">
+            <input type="password" id="signup-pass" placeholder="Password">
+            <button onclick="doSignup()">Join Now</button>
+            <div class="footer-links">
+                Already have an account? <a onclick="showLogin()">Login</a>
+            </div>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <div id="login-form" class="hidden">
+            <h2>Login</h2>
+            <input type="email" id="login-email" placeholder="Email Address">
+            <input type="password" id="login-pass" placeholder="Password">
+            <button onclick="doLogin()">Get OTP</button>
+            <div class="footer-links">
+                New here? <a onclick="showSignup()">Sign up</a>
+            </div>
+        </div>
+
+        <!-- OTP FORM -->
+        <div id="otp-form" class="hidden">
+            <h2>Verify Code</h2>
+            <p class="otp-msg">Code sent to your email.</p>
+            <input type="text" id="otp-code" placeholder="Enter OTP">
+            <button onclick="doVerify()">Verify</button>
+        </div>
+    </div>
+
+    <script>
+        const API = window.location.origin;
+
+        function showLogin() {
+            document.getElementById('signup-form').classList.add('hidden');
+            document.getElementById('login-form').classList.remove('hidden');
+            document.getElementById('otp-form').classList.add('hidden');
+        }
+        function showSignup() {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('signup-form').classList.remove('hidden');
+            document.getElementById('otp-form').classList.add('hidden');
+        }
+        function showOtp() {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('otp-form').classList.remove('hidden');
+        }
+
+        async function doSignup() {
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-pass').value;
+            const res = await fetch(`${API}/signup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            alert(data.message);
+            if(data.success) showLogin();
+        }
+
+        async function doLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-pass').value;
+            const res = await fetch(`${API}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            if(data.success) showOtp();
+            else alert(data.message);
+        }
+
+        async function doVerify() {
+            const email = document.getElementById('login-email').value;
+            const otp = document.getElementById('otp-code').value;
+            const res = await fetch(`${API}/verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, otp })
+            });
+            const data = await res.json();
+            if(data.success) {
+                sessionStorage.setItem('loggedIn', 'true');
+                window.location.href = '/nav.html';
+            } else alert(data.message);
+        }
+    </script>
+</body>
+</html>
+
