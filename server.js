@@ -12,8 +12,8 @@ app.use(express.static('public'));
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('✅ MongoDB Connected'))
-    .catch(err => console.log('❌ MongoDB Error:', err));
+    .then(() => console.log('✅ Connected to MongoDB'))
+    .catch(err => console.error('❌ Connection Error:', err));
 
 // User Schema
 const UserSchema = new mongoose.Schema({
@@ -24,7 +24,7 @@ const UserSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', UserSchema);
 
-// Email Setup
+// Email Transporter
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -33,63 +33,64 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// ROUTE: SIGNUP (Create Account)
+// ROUTE: SIGNUP
 app.post('/signup', async (req, res) => {
-    const email = req.body.email.trim().toLowerCase();
-    const password = req.body.password.trim();
     try {
+        const email = req.body.email.trim().toLowerCase();
+        const password = req.body.password.trim();
         const newUser = new User({ email, password });
         await newUser.save();
         res.json({ success: true, message: 'Account created for Aimers Classes!' });
     } catch (error) {
-        res.json({ success: false, message: 'Account already exists.' });
+        res.json({ success: false, message: 'Registration failed or email exists.' });
     }
 });
 
-// ROUTE: LOGIN (Send OTP)
+// ROUTE: LOGIN
 app.post('/login', async (req, res) => {
-    const email = req.body.email.trim().toLowerCase();
-    const password = req.body.password.trim();
     try {
+        const email = req.body.email.trim().toLowerCase();
+        const password = req.body.password.trim();
+        
         const user = await User.findOne({ email, password });
         if (!user) return res.json({ success: false, message: 'Incorrect email or password.' });
 
-        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-        user.otp = otpCode;
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.otp = otp;
         user.otpExpires = Date.now() + 5 * 60 * 1000;
         await user.save();
 
         await transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: email,
-            subject: 'Your Aimers Classes Login Code',
-            text: `Welcome! Your verification code is: ${otpCode}`
+            subject: 'Aimers Classes Login OTP',
+            text: `Welcome back! Your OTP is: ${otp}`
         });
-        res.json({ success: true, message: 'OTP sent to your email!' });
+        res.json({ success: true, message: 'OTP sent to email.' });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false, message: 'Server error during login.' });
     }
 });
 
-// ROUTE: VERIFY OTP
+// ROUTE: VERIFY
 app.post('/verify', async (req, res) => {
-    const email = req.body.email.trim().toLowerCase();
-    const otp = req.body.otp.trim();
     try {
+        const email = req.body.email.trim().toLowerCase();
+        const otp = req.body.otp.trim();
         const user = await User.findOne({ email });
+        
         if (user && user.otp === otp && user.otpExpires > Date.now()) {
             user.otp = null;
             user.otpExpires = null;
             await user.save();
-            res.json({ success: true, message: 'Login successful!' });
+            res.json({ success: true, message: 'Verified!' });
         } else {
-            res.json({ success: false, message: 'Invalid or expired code.' });
+            res.json({ success: false, message: 'Invalid or expired OTP.' });
         }
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Verification error' });
+        res.status(500).json({ success: false, message: 'Error during verification.' });
     }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));
-
+app.listen(PORT, () => console.log(`🚀 Server active on port ${PORT}`));
